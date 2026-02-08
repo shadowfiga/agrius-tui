@@ -1,5 +1,5 @@
 // ui/nav.tsx
-import type { FC } from "react";
+import React from "react";
 import {
   NavigationState,
   navigationStateLabelMap,
@@ -9,7 +9,6 @@ import { colors } from "./colors.ts";
 import { TextAttributes } from "@opentui/core";
 import { DATA } from "../game/data.ts";
 import type { Game } from "../game/game.ts";
-import { useKeyboard } from "@opentui/react";
 
 export interface NavProps {
   state: NavigationState;
@@ -26,7 +25,7 @@ function formatQty(value: number): string {
   return `${Math.floor(value / 100_000) / 10}m`;
 }
 
-export const Nav: FC<NavProps> = (props) => {
+export function Nav(props: NavProps): JSX.Element {
   const { state, game } = props;
 
   return (
@@ -72,4 +71,4 @@ export const Nav: FC<NavProps> = (props) => {
       </box>
     </box>
   );
-};
+}
