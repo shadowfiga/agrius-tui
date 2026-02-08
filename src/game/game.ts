@@ -12,15 +12,15 @@ export type SaveState = {
 
 export class Game {
     public credits: number = 0;
-
-    // If release events exist, this supports true “one per hold”
-    private down: Set<string> = new Set<string>();
-
-    // Fallback when release events do NOT exist
-    private downUntil: Map<string, number> = new Map<string, number>();
+    private lastTickAtMs: number = 0;
+    private requireTickWindow: boolean = false;
+    private tickWindowMs: number = 150;
+    private spaceDebounceMs: number = 120;
+    private lastSpaceAcceptedAtMs: number = 0;
 
     public tick(dt: number): void {
-        // dt is seconds
+        this.lastTickAtMs = Date.now();
+        void dt;
     }
 
     public serialize(): SaveState {
@@ -36,6 +36,32 @@ export class Game {
         }
     }
 
+    private isInTickWindow(nowMs: number): boolean {
+        if (!this.lastTickAtMs) {
+            return false;
+        }
+        if (nowMs - this.lastTickAtMs > this.tickWindowMs) {
+            return false;
+        }
+        return true;
+    }
+
+    private canAcceptSpace(nowMs: number): boolean {
+        if (this.lastSpaceAcceptedAtMs) {
+            if (nowMs - this.lastSpaceAcceptedAtMs < this.spaceDebounceMs) {
+                return false;
+            }
+        }
+
+        if (this.requireTickWindow) {
+            if (!this.isInTickWindow(nowMs)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public keyboard(e: KeyEvent): GameIntent {
         const name: string = e.name;
 
@@ -43,41 +69,14 @@ export class Game {
             return { type: "QUIT" };
         }
 
-        const eventType: string | undefined = (e as any).eventType;
-
-        // Release handling (only if the runtime actually provides it)
-        if (eventType === "release") {
-            this.down.delete(name);
-            return { type: "NONE" };
-        }
-
-        // Ignore auto-repeat
-        const repeated: boolean = Boolean((e as any).repeated);
-        if (repeated) {
-            return { type: "NONE" };
-        }
-
-        const hasReleaseSupport: boolean = typeof eventType === "string";
-
-        if (hasReleaseSupport) {
-            if (this.down.has(name)) {
-                return { type: "NONE" };
-            }
-            this.down.add(name);
-        } else {
-            // No release events: use debounce to prevent hold spam but allow re-taps.
-            const now: number = Date.now();
-            const until: number = this.downUntil.get(name) ?? 0;
-
-            if (now < until) {
-                return { type: "NONE" };
-            }
-
-            // Block this key briefly (tune this; 150–250ms feels right)
-            this.downUntil.set(name, now + 200);
-        }
-
         if (name === "space") {
+            const nowMs: number = Date.now();
+
+            if (!this.canAcceptSpace(nowMs)) {
+                return { type: "NONE" };
+            }
+
+            this.lastSpaceAcceptedAtMs = nowMs;
             this.credits += 1;
             return { type: "CREDIT_CLICK" };
         }

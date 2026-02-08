@@ -6,6 +6,7 @@ import { performance } from "node:perf_hooks";
 
 import { Game, type GameIntent, type SaveState } from "./game/game.ts";
 import {loadSave, saveAtomic} from "./game/persistence.ts";
+import {logKeyEvent} from "./logger.ts";
 
 function useTicker(gameRef: React.RefObject<Game>, stepMs: number = 50): void {
     const [, force] = useState(0);
@@ -102,6 +103,8 @@ function App(): any {
 
     // Keyboard forwarding: use game.keyboard and then act on intent
     useKeyboard((event: KeyEvent) => {
+        logKeyEvent(event);
+
         const intent: GameIntent = gameRef.current.keyboard(event);
 
         if (intent.type === "CREDIT_CLICK") {
