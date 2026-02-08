@@ -3,9 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useKeyboard } from "@opentui/react";
 import { type KeyEvent } from "@opentui/core";
 
-import { Game, type GameIntent, type SaveState } from "../game/game.ts";
+import { Game, type SaveState } from "../game/game.ts";
 import { loadSave, saveAtomic } from "../game/persistence.ts";
-import { logKeyEvent } from "../logger.ts";
 import { useTicker } from "./use-ticker.ts";
 
 export type UseGameOptions = {
@@ -93,23 +92,23 @@ export function useGame(options: UseGameOptions = {}): UseGameResult {
   }, [loaded]);
 
   // Keyboard → game intent
-  useKeyboard((event: KeyEvent) => {
-    if (logKeys) {
-      void logKeyEvent(event);
-    }
-
-    const intent: GameIntent = gameRef.current.keyboard(event);
-
-    if (intent.type === "CREDIT_CLICK") {
-      setVersion((v) => v + 1);
-    }
-
-    if (intent.type === "QUIT") {
-      void saveAtomic(gameRef.current.serialize()).finally(() => {
-        process.exit(0);
-      });
-    }
-  });
+  // useKeyboard((event: KeyEvent) => {
+  //   if (logKeys) {
+  //     void logKeyEvent(event);
+  //   }
+  //
+  //   const intent: GameIntent = gameRef.current.keyboard(event);
+  //
+  //   if (intent.type === "CREDIT_CLICK") {
+  //     setVersion((v) => v + 1);
+  //   }
+  //
+  //   if (intent.type === "QUIT") {
+  //     void saveAtomic(gameRef.current.serialize()).finally(() => {
+  //       process.exit(0);
+  //     });
+  //   }
+  // });
 
   return {
     game: gameRef.current,
