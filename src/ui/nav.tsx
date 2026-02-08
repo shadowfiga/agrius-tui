@@ -1,7 +1,7 @@
 // ui/nav.tsx
 import type { FC } from "react";
 import {
-  type NavigationState,
+  NavigationState,
   navigationStateLabelMap,
   navigationStateValues,
 } from "./navigation-state.ts";
@@ -9,6 +9,7 @@ import { colors } from "./colors.ts";
 import { TextAttributes } from "@opentui/core";
 import { DATA } from "../game/data.ts";
 import type { Game } from "../game/game.ts";
+import { useKeyboard } from "@opentui/react";
 
 export interface NavProps {
   state: NavigationState;
@@ -27,7 +28,16 @@ function formatQty(value: number): string {
 }
 
 export const Nav: FC<NavProps> = (props) => {
-  const { state, game } = props;
+  const { state, setState, game } = props;
+
+  useKeyboard((e) => {
+    if (e.name === "tab") {
+      const currentIdx = navigationStateValues.findIndex((s) => s === state);
+      const nextState =
+        navigationStateValues[(currentIdx + 1) % navigationStateValues.length]!;
+      setState(nextState);
+    }
+  });
 
   return (
     <box

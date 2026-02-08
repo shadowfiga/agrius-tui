@@ -1,7 +1,7 @@
 // main.tsx
 import React, { useState } from "react";
 import { createCliRenderer, TextAttributes } from "@opentui/core";
-import { createRoot } from "@opentui/react";
+import { createRoot, useKeyboard } from "@opentui/react";
 
 import { Nav } from "./ui/nav.tsx";
 import { useGame } from "./hooks/use-game.ts";
