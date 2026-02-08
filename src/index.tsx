@@ -1,11 +1,14 @@
 // main.tsx
 import React, { useState } from "react";
-import { createCliRenderer, TextAttributes } from "@opentui/core";
-import { createRoot, useKeyboard } from "@opentui/react";
+import { createCliRenderer } from "@opentui/core";
+import { createRoot } from "@opentui/react";
 
 import { Nav } from "./ui/nav.tsx";
 import { useGame } from "./hooks/use-game.ts";
-import { NavigationState } from "./ui/navigation-state.ts";
+import {
+  NavigationState,
+  navigationStateValues,
+} from "./ui/navigation-state.ts";
 
 function App(): any {
   const [state, setState] = useState<NavigationState>(NavigationState.plots);
@@ -14,8 +17,15 @@ function App(): any {
     tickMs: 50,
     autosaveMs: 3000,
     logKeys: true,
+    onTab: () => {
+      const currentIdx = navigationStateValues.findIndex((s) => s === state);
+      const nextState =
+        navigationStateValues[(currentIdx + 1) % navigationStateValues.length]!;
+      setState(nextState);
+    },
   });
 
+  void loaded;
   void version;
 
   return (
@@ -24,7 +34,7 @@ function App(): any {
         <ascii-font font="tiny" text="Agrius" />
       </box>
 
-      <Nav state={state} setState={setState} game={game} />
+      <Nav state={state} game={game} />
     </box>
   );
 }

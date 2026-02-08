@@ -13,7 +13,6 @@ import { useKeyboard } from "@opentui/react";
 
 export interface NavProps {
   state: NavigationState;
-  setState: (state: NavigationState) => void;
   game: Game;
 }
 
@@ -28,16 +27,7 @@ function formatQty(value: number): string {
 }
 
 export const Nav: FC<NavProps> = (props) => {
-  const { state, setState, game } = props;
-
-  useKeyboard((e) => {
-    if (e.name === "tab") {
-      const currentIdx = navigationStateValues.findIndex((s) => s === state);
-      const nextState =
-        navigationStateValues[(currentIdx + 1) % navigationStateValues.length]!;
-      setState(nextState);
-    }
-  });
+  const { state, game } = props;
 
   return (
     <box

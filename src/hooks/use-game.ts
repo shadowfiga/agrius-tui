@@ -1,37 +1,38 @@
 // hooks/use-game.ts
 import { useEffect, useRef, useState } from "react";
 import { useKeyboard } from "@opentui/react";
-import { type KeyEvent } from "@opentui/core";
+import type { KeyEvent } from "@opentui/core";
 
-import { Game, type SaveState } from "../game/game.ts";
-import { loadSave, saveAtomic } from "../game/persistence.ts";
+import { Game, type GameIntent, type SaveState } from "../game/game.ts";
+import { loadSave } from "../game/persistence.ts";
+import { logKeyEvent } from "../logger.ts";
 import { useTicker } from "./use-ticker.ts";
 
 export type UseGameOptions = {
   tickMs?: number;
   autosaveMs?: number;
   logKeys?: boolean;
+  onTab?: () => void; // global handler callback
 };
 
 export type UseGameResult = {
   game: Game;
   loaded: boolean;
   version: number;
+  saveNow: () => Promise<void>;
 };
 
 export function useGame(options: UseGameOptions = {}): UseGameResult {
-  const tickMs: number = options.tickMs ?? 50;
-  const autosaveMs: number = options.autosaveMs ?? 3000;
-  const logKeys: boolean = options.logKeys ?? true;
+  const tickMs = options.tickMs ?? 50;
+  const autosaveMs = options.autosaveMs ?? 3000;
+  const logKeys = options.logKeys ?? true;
 
   const gameRef = useRef<Game>(new Game());
-  const [loaded, setLoaded] = useState<boolean>(false);
-  const [version, setVersion] = useState<number>(0);
+  const [loaded, setLoaded] = useState(false);
+  const [version, setVersion] = useState(0);
 
-  // Ticker
   useTicker(gameRef, tickMs);
 
-  // Load save once
   useEffect(() => {
     const run = async (): Promise<void> => {
       const saved: SaveState | null = await loadSave<SaveState>();
@@ -43,24 +44,23 @@ export function useGame(options: UseGameOptions = {}): UseGameResult {
     void run();
   }, []);
 
-  // Autosave
   useEffect(() => {
     if (!loaded) {
       return;
     }
 
-    let inFlight: boolean = false;
+    let inFlight = false;
 
     const id: NodeJS.Timeout = setInterval(() => {
       if (inFlight) {
         return;
       }
-
       inFlight = true;
 
-      void saveAtomic(gameRef.current.serialize())
+      void gameRef.current
+        .save()
         .catch(() => {
-          // ignore for MVP
+          // ignore in MVP
         })
         .finally(() => {
           inFlight = false;
@@ -72,14 +72,13 @@ export function useGame(options: UseGameOptions = {}): UseGameResult {
     };
   }, [loaded, autosaveMs]);
 
-  // Save on Ctrl+C
   useEffect(() => {
     if (!loaded) {
       return;
     }
 
     const onSigint = (): void => {
-      void saveAtomic(gameRef.current.serialize()).finally(() => {
+      void gameRef.current.save().finally(() => {
         process.exit(0);
       });
     };
@@ -91,28 +90,44 @@ export function useGame(options: UseGameOptions = {}): UseGameResult {
     };
   }, [loaded]);
 
-  // Keyboard → game intent
-  // useKeyboard((event: KeyEvent) => {
-  //   if (logKeys) {
-  //     void logKeyEvent(event);
-  //   }
-  //
-  //   const intent: GameIntent = gameRef.current.keyboard(event);
-  //
-  //   if (intent.type === "CREDIT_CLICK") {
-  //     setVersion((v) => v + 1);
-  //   }
-  //
-  //   if (intent.type === "QUIT") {
-  //     void saveAtomic(gameRef.current.serialize()).finally(() => {
-  //       process.exit(0);
-  //     });
-  //   }
-  // });
+  const saveNow = async (): Promise<void> => {
+    await gameRef.current.save();
+    setVersion((v) => v + 1);
+  };
+
+  useKeyboard((event: KeyEvent) => {
+    if (logKeys) {
+      void logKeyEvent(event);
+    }
+
+    // 1) Global handlers first
+    if (event.name === "tab") {
+      if (options.onTab) {
+        options.onTab();
+      }
+      setVersion((v) => v + 1);
+      return;
+    }
+
+    if (event.name === "q") {
+      void gameRef.current.save().finally(() => {
+        process.exit(0);
+      });
+      return;
+    }
+
+    // 2) Game-level handler (screen-specific)
+    const intent: GameIntent = gameRef.current.keyboard(event);
+
+    if (intent.type !== "NONE") {
+      setVersion((v) => v + 1);
+    }
+  });
 
   return {
     game: gameRef.current,
     loaded,
     version,
+    saveNow,
   };
 }

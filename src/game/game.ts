@@ -94,6 +94,10 @@ export class Game {
     }
   }
 
+  public async save(): Promise<void> {
+    await saveAtomic(this.serialize());
+  }
+
   public getCrop(type: CropType): Crop {
     const crop = this.cropsByType[type];
 
