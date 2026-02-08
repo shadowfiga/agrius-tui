@@ -1,5 +1,4 @@
-// ui/nav.tsx
-import React from "react";
+import React, { type ReactNode } from "react";
 import {
   NavigationState,
   navigationStateLabelMap,
@@ -25,7 +24,7 @@ function formatQty(value: number): string {
   return `${Math.floor(value / 100_000) / 10}m`;
 }
 
-export function Nav(props: NavProps): JSX.Element {
+export function Nav(props: NavProps): ReactNode {
   const { state, game } = props;
 
   return (
