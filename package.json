@@ -4,10 +4,14 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run --watch src/index.tsx"
+    "dev": "bun run --watch src/index.tsx",
+    "prepare": "husky install"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -16,5 +20,8 @@
     "@opentui/core": "^0.1.77",
     "@opentui/react": "^0.1.77",
     "react": "^19.2.4"
+  },
+  "lint-staged": {
+    "*.{js,css,md}": "prettier --write"
   }
 }
